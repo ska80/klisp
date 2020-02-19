@@ -1,0 +1,158 @@
+; Meta-circular interpreter
+; by Nils M Holm, 2019
+; Based on McCarthy's Micro Manual for LISP,
+; as published in HOPL II proceedings, 1978
+
+(setq label
+  (macro
+    (lambda (x f)
+      @(labels ((,x ,f)) ,x))))
+
+(setq evsrc
+  (quote
+    (label eval
+      (lambda (x e)
+        (cond ((atom x)
+                ((label assoc
+                   (lambda (x a)
+                     (cond ((eq nil a) nil)
+                           ((eq x (caar a))
+                             (cadar a))
+                           (t (assoc x (cdr a))))))
+                 x e))
+              ((atom (car x))
+                (cond ((eq (car x) (quote quote))
+                        (cadr x))
+                      ((eq (car x) (quote atom))
+                        (atom (eval (cadr x) e)))
+                      ((eq (car x) (quote eq))
+                        (eq (eval (cadr x) e)
+                            (eval (cadr (cdr x)) e)))
+                      ((eq (car x) (quote car))
+                        (car (eval (cadr x) e)))
+                      ((eq (car x) (quote cdr))
+                        (cdr (eval (cadr x) e)))
+                      ((eq (car x) (quote caar))
+                        (caar (eval (cadr x) e)))
+                      ((eq (car x) (quote cadr))
+                        (cadr (eval (cadr x) e)))
+                      ((eq (car x) (quote cdar))
+                        (cdar (eval (cadr x) e)))
+                      ((eq (car x) (quote cadar))
+                        (cadar (eval (cadr x) e)))
+                      ((eq (car x) (quote cons))
+                        (cons (eval (cadr x) e)
+                              (eval (cadr (cdr x)) e)))
+                      ((eq (car x) (quote cond))
+                        ((label evcon
+                           (lambda (c e)
+                             (cond ((eval (caar c) e)
+                                     (eval (cadar c) e))
+                                   (t (evcon (cdr c) e)))))
+                         (cdr x) e))
+                      (t (eval (cons (eval (car x) e)
+                                     (cdr x))
+                               e))))
+              ((eq (caar x) (quote lambda))
+                (eval
+                  (cadr (cdar x))
+                  ((label bind
+                     (lambda (v a ee)
+                       (cond ((eq v nil) ee)
+                             (t (bind
+                                  (cdr v)
+                                  (cdr a)
+                                  (cons
+                                    (cons
+                                      (car v)
+                                      (cons
+                                        (eval (car a) e)
+                                        nil))
+                                    ee))))))
+                   (cadar x) (cdr x) e)))
+              ((eq (caar x) (quote label))
+                (eval (cons (cadr (cdar x)) (cdr x))
+                      (cons (cons (cadar x)
+                                  (cons (car x) nil))
+                            e))))))))
+
+(setq eval
+  (label eval
+    (lambda (x e)
+      (cond ((atom x)
+              ((label assoc
+                 (lambda (x a)
+                   (cond ((eq nil a) nil)
+                         ((eq x (caar a))
+                           (cadar a))
+                         (t (assoc x (cdr a))))))
+               x e))
+            ((atom (car x))
+              (cond ((eq (car x) (quote quote))
+                      (cadr x))
+                    ((eq (car x) (quote atom))
+                      (atom (eval (cadr x) e)))
+                    ((eq (car x) (quote eq))
+                      (eq (eval (cadr x) e)
+                          (eval (cadr (cdr x)) e)))
+                    ((eq (car x) (quote car))
+                      (car (eval (cadr x) e)))
+                    ((eq (car x) (quote cdr))
+                      (cdr (eval (cadr x) e)))
+                    ((eq (car x) (quote caar))
+                      (caar (eval (cadr x) e)))
+                    ((eq (car x) (quote cadr))
+                      (cadr (eval (cadr x) e)))
+                    ((eq (car x) (quote cdar))
+                      (cdar (eval (cadr x) e)))
+                    ((eq (car x) (quote cadar))
+                      (cadar (eval (cadr x) e)))
+                    ((eq (car x) (quote cons))
+                      (cons (eval (cadr x) e)
+                            (eval (cadr (cdr x)) e)))
+                    ((eq (car x) (quote cond))
+                      ((label evcon
+                         (lambda (c e)
+                           (cond ((eval (caar c) e)
+                                   (eval (cadar c) e))
+                                 (t (evcon (cdr c) e)))))
+                       (cdr x) e))
+                    (t (eval (cons (eval (car x) e)
+                                   (cdr x))
+                             e))))
+            ((eq (caar x) (quote lambda))
+              (eval
+                (cadr (cdar x))
+                ((label bind
+                   (lambda (v a ee)
+                     (cond ((eq v nil) ee)
+                           (t (bind
+                                (cdr v)
+                                (cdr a)
+                                (cons
+                                  (cons
+                                    (car v)
+                                    (cons
+                                        (eval (car a) e)
+                                      nil))
+                                  ee))))))
+                 (cadar x) (cdr x) e)))
+            ((eq (caar x) (quote label))
+              (eval (cons (cadr (cdar x)) (cdr x))
+                    (cons (cons (cadar x)
+                                (cons (car x) nil))
+                          e)))))))
+
+(setq prog
+ '((label append
+          (lambda (a b)
+            (cond ((eq a nil) b)
+                  (t (cons (car a)
+                           (append (cdr a)
+                                    b))))))
+   (quote (a b c))
+   (quote (d e f))))
+
+; (eval prog '((t t)))
+
+; (eval @(,evsrc ',prog '((t t))) '((t t)))

@@ -1,0 +1,14 @@
+; Towers of Hanonoi
+; HANOI  - solve for N disks from X to Y via Z
+; HANOI1 - solve for N disks
+
+(setq hanoi
+  (lambda (n x y z)
+    (cond ((null n) nil)
+          (else (conc (hanoi (cdr n) x z y)
+                      (list (list x y))
+                      (hanoi (cdr n) z y x))))))
+
+(setq hanoi1
+  (lambda (n)
+    (hanoi n 'left 'middle 'right)))

@@ -1,0 +1,26 @@
+; Exponent (x^y) function
+
+(load 'src//nmath)
+
+; Naive version, works best for y<20
+
+(setq expt
+  (lambda (x y)
+    (cond ((zerop y) #1) 
+          (else (times x (expt x (diff y #1)))))))
+
+; Divide and conquer, works best for y>=20
+
+(setq expt
+  (lambda (x y)
+    (labels
+      ((square (lambda (x) (times x x)))
+       (expt1
+         (lambda (y)
+           (cond ((zerop y) #1)
+                 ((zerop (rem y #2))
+                   (square (expt1 (div y #2))))
+                 (else
+                   (times x (square (expt1 (div y #2)))))))))
+      (expt1 y))))
+

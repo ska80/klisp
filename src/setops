@@ -1,0 +1,31 @@
+; Set operations.
+; ISECT = intersection (A*B)
+; UNION = union (A+B)
+; SETDIFF = difference (A-B)
+
+(setq isect
+  (lambda (a b)
+    (loop is ((a a) (r nil))
+      (cond ((null a) (nrever r))
+            ((memb (car a) b)
+              (is (cdr a) (cons (car a) r)))
+            (else
+              (is (cdr a) r))))))
+
+(setq union
+  (lambda (a b)
+    (loop u ((a (conc a b)) (r nil))
+      (cond ((null a) (nrever r))
+            ((memb (car a) r)
+              (u (cdr a) r))
+            (else
+              (u (cdr a) (cons (car a) r)))))))
+
+(setq setdiff
+  (lambda (a b)
+    (loop d ((a a) (r nil))
+      (cond ((null a) (rever r))
+            ((memb (car a) b)
+              (d (cdr a) r))
+            (else
+              (d (cdr a) (cons (car a) r)))))))

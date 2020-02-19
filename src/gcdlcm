@@ -1,0 +1,16 @@
+; Greatest Common Divisor and Least Common Multiple
+
+(load 'src//nmath)
+
+(setq gcd
+  (lambda (a b)
+    (cond ((zerop b) a)
+          ((zerop a) b)
+          ((less a b) (gcd a (rem b a)))
+          (else (gcd b (rem a b))))))
+
+(setq lcm
+  (lambda (a b)
+    (let ((cd (gcd a b)))
+      (times cd (times (div a cd)
+                       (div b cd))))))

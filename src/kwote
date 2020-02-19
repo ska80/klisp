@@ -1,0 +1,9 @@
+; Simple example macro.
+; KWOTE is the same as QUOTE.
+
+(setq kwote
+  (macro
+    (lambda (x)
+      ((lambda x x) 'quote x))))
+
+(kwote (a b c))

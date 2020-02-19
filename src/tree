@@ -1,0 +1,9 @@
+; Generate binart tree of depth N.
+; N is given as a list of N elements.
+
+(setq tree
+  (lambda (n)
+    (if (null n)
+        (quote i)
+        (list (tree (cdr n))
+              (tree (cdr n))))))

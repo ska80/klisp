@@ -1,0 +1,11 @@
+; Flatten a list
+
+(setq flat
+  (lambda (x)
+    (labels
+      ((f (lambda (x r)
+            (cond ((null x) r)
+                  ((atom x) (cons x r))
+                  (else (f (car x)
+                           (f (cdr x) r)))))))
+      (f x nil))))

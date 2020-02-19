@@ -1,0 +1,287 @@
+; Kilo LISP Grinder (Pretty-Printer)
+
+(setq obperln #123456789012)
+(setq longlen #123456)
+
+(setq off nil)
+(setq lp  '/()
+(setq rp  '/))
+(setq sp  '/ )
+(setq nl  '/
+)
+(setq dot '/ /./ )
+
+(setq zerop null)
+(setq dec   cdr)
+
+(setq inc
+  (lambda (x)
+    (cons 'i x)))
+
+(setq add
+  (lambda (x y)
+    (conc x y)))
+
+(setq spaces
+  (lambda (n)
+    (cond ((zerop n))
+          (else (prin1 sp)
+                (spaces (dec n))))))
+
+(setq terpri
+  (lambda ()
+    (prin1 nl)
+    (spaces off)))
+
+(setq when
+  (macro
+    (lambda (p . xs)
+      @(if ,p (prog . ,xs) nil))))
+
+(setq with
+  (macro
+    (lambda (b . xs)
+      (let ((v (car b))
+            (a (cadr b))
+            (g (gensym))
+            (r (gensym)))
+        @((lambda (,g)
+            (setq ,v ,a)
+            (let ((,r (prog . ,xs)))
+              (setq ,v ,g)
+              ,r))
+          ,v)))))
+
+(setq shortp
+  (lambda (x)
+    (labels
+      ((f (lambda (x n)
+            (cond ((atom n) nil)
+                  ((null x) n)
+                  ((atom x) (cdr n))
+                  (else (f (car x)
+                           (f (cdr x) n)))))))
+      (f x longlen))))
+
+(setq simplep
+  (lambda (a)
+    (cond ((null a))
+          ((atom (car a)) (simplep (cdr a)))
+          (else nil))))
+
+(setq pppair
+  (lambda (x)
+    (prin1 lp)
+    (loop next ((x x)
+                (s nil)
+                (n obperln))
+      (cond ((null x))
+            ((zerop n)
+              (prin1 nl)
+              (spaces (inc off))
+              (next x nil obperln))
+            ((not (atom (car x)))
+              (if s (prin1 sp) nil)
+              (with (off (inc off))
+                (pppair (car x))
+                (when (not (null (cdr x)))
+                      (terpri)))
+              (next (cdr x) nil obperln))
+            ((not (atom x))
+              (if s (prin1 sp) nil)
+              (ppobj (car x))
+              (next (cdr x) t (dec n)))
+            ((not (null x))
+              (prin1 dot)
+              (ppobj x))))
+    (prin1 rp)))
+
+(setq ppobj
+  (lambda (x)
+    (if (atom x)
+        (prin1 x)
+        (pppair x))))
+
+(setq ppbody
+  (lambda (x)
+    (cond ((null x))
+          (else
+            (pp (car x))
+            (when (not (null (cdr x)))
+                  (terpri))
+            (ppbody (cdr x))))))
+
+(setq ppind
+  (lambda (x n)
+    (cond ((simplep x)
+            (prin1 x))
+          (else
+            (prin1 lp)
+            (prin1 (car x))
+            (when (not (null (cdr x)))
+                  (prin1 sp)
+                  (with (off (add n off))
+                    (ppbody (cdr x))))
+            (prin1 rp)))))
+
+(setq ppsub
+  (lambda (x)
+    (prin1 lp)
+    (prin1 (car x))
+    (when (not (null (cdr x)))
+          (with (off (add #12 off))
+            (terpri)
+            (ppbody (cdr x))))
+    (prin1 rp)))
+
+(setq ppquote
+  (lambda (x)
+    (let ((i #1))
+      (cond ((eq 'quote  (car x))
+              (prin1 '/'))
+            ((eq 'qquote (car x))
+              (prin1 '/@))
+            ((eq 'unquote (car x))
+              (prin1 '/,))
+            ((eq 'splice (car x))
+              (prin1 '/,/@)
+              (setq i (inc i))))
+    (with (off (add i off))
+      (if (and (eq 'quote (car x))
+               (not (atom (cadr x))))
+          (pppair (cadr x))
+          (pp (cadr x)))))))
+
+(setq pplam
+  (lambda (x)
+    (prin1 lp)
+    (prin1 'lambda)
+    (prin1 sp)
+    (pp (cadr x))
+    (with (off (add #12 off))
+      (terpri)
+      (ppbody (cddr x))
+      (prin1 rp))))
+
+(setq ppapp
+  (lambda (x)
+    (prin1 lp)
+    (with (off (inc off))
+      (pp (car x))
+      (when (not (null (cdr x)))
+            (terpri))
+      (ppbody (cdr x))
+      (prin1 rp))))
+
+(setq ppsetq
+  (lambda (x)
+    (cond ((eq 'lambda (car (caddr x)))
+            (prin1 lp)
+            (prin1 'setq)
+            (prin1 sp)
+            (prin1 (cadr x))
+            (prin1 sp)
+            (with (off (add #12 off))
+              (terpri)
+              (pp (caddr x)))
+            (prin1 rp))
+          (else
+            (prin1 x)))))
+
+(setq ppbind
+  (lambda (x)
+    (prin1 lp)
+    (with (off (inc off))
+      (loop next ((x x))
+        (cond ((null x))
+              (else
+                (prin1 lp)
+                (pp (caar x))
+                (prin1 sp)
+                (pp (cadar x))
+                (prin1 rp)
+                (when (not (null (cdr x)))
+                      (terpri))
+                (next (cdr x))))))
+    (prin1 rp)))
+
+(setq ppcls
+  (lambda (x)
+    (loop next ((x x))
+      (cond ((null x))
+            (else
+              (prin1 lp)
+              (pp (caar x))
+              (cond ((null (cdar x)))
+                    (else
+                      (with (off (add #12 off))
+                        (terpri)
+                        (ppbody (cdar x)))))
+              (prin1 rp)
+              (when (not (null (cdr x)))
+                    (terpri))
+              (next (cdr x)))))))
+
+(setq ppform
+  (lambda (x n f)
+    (prin1 lp)
+    (prin1 (car x))
+    (prin1 sp)
+    (with (off (add n off))
+      (f (cdr x)))
+    (prin1 rp)))
+
+(setq ppbform
+  (lambda (x n nl sym)
+    (prin1 lp)
+    (prin1 (car x))
+    (when sym
+          (prin1 sp)
+          (prin1 (cadr x))
+          (setq x (cdr x)))
+    (with (off (add n off))
+      (if nl
+          (terpri)
+          (prin1 sp))
+      (ppbind (cadr x)))
+    (with (off (add #12 off))
+      (terpri)
+      (ppbody (cddr x)))
+    (prin1 rp)))
+
+(setq pp
+  (lambda (x)
+    (cond ((atom x)
+            (prin1 x))
+          ((not (atom (car x)))
+            (ppapp x))
+          ((memb (car x) '(quote qquote unquote splice))
+            (ppquote x))
+          ((eq 'lambda (car x))
+            (pplam x))
+          ((memb (car x) '(or if))
+            (ppind x #1234))
+          ((eq x 'and)
+            (ppind x #12345))
+          ((eq 'ifnot (car x))
+            (ppind x #1234567))
+          ((eq 'let (car x))
+            (ppbform x #12345 nil nil))
+          ((eq 'labels (car x))
+            (ppbform x #12 t nil))
+          ((eq 'loop (car x))
+            (ppbform x #123456 t t))
+          ((eq 'cond (car x))
+            (ppform x #123456 ppcls))
+          ((eq 'setq (car x))
+            (ppsetq x))
+          ((not (shortp x))
+            (ppsub x))
+          (else
+            (prin1 x)))))
+
+(setq grind
+  (lambda (x)
+    (pp x)
+    (prin1 nl)
+    t))

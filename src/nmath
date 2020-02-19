@@ -1,0 +1,216 @@
+; Kilo LISP natural number package
+; Nils M Holm, 2007-2019
+; In the public domain
+
+(setq value
+  (lambda (x)
+    (cond ((eq x '0) nil)
+          ((eq x '1) #i)
+          ((eq x '2) #ii)
+          ((eq x '3) #iii)
+          ((eq x '4) #iiii)
+          ((eq x '5) #iiiii)
+          ((eq x '6) #iiiiii)
+          ((eq x '7) #iiiiiii)
+          ((eq x '8) #iiiiiiii)
+          ((eq x '9) #iiiiiiiii)
+          (else (error 'not/ a/ digit x)))))
+
+(setq dzerop null)
+
+(setq dpred cdr)
+(setq dsucc (lambda (x) (cons 'i x)))
+
+(setq sums
+  '(((0.0) (1.0) (2.0) (3.0) (4.0) (5.0) (6.0) (7.0) (8.0) (9.0) (0.1))
+    ((1.0) (2.0) (3.0) (4.0) (5.0) (6.0) (7.0) (8.0) (9.0) (0.1) (1.1))
+    ((2.0) (3.0) (4.0) (5.0) (6.0) (7.0) (8.0) (9.0) (0.1) (1.1) (2.1))
+    ((3.0) (4.0) (5.0) (6.0) (7.0) (8.0) (9.0) (0.1) (1.1) (2.1) (3.1))
+    ((4.0) (5.0) (6.0) (7.0) (8.0) (9.0) (0.1) (1.1) (2.1) (3.1) (4.1))
+    ((5.0) (6.0) (7.0) (8.0) (9.0) (0.1) (1.1) (2.1) (3.1) (4.1) (5.1))
+    ((6.0) (7.0) (8.0) (9.0) (0.1) (1.1) (2.1) (3.1) (4.1) (5.1) (6.1))
+    ((7.0) (8.0) (9.0) (0.1) (1.1) (2.1) (3.1) (4.1) (5.1) (6.1) (7.1))
+    ((8.0) (9.0) (0.1) (1.1) (2.1) (3.1) (4.1) (5.1) (6.1) (7.1) (8.1))
+    ((9.0) (0.1) (1.1) (2.1) (3.1) (4.1) (5.1) (6.1) (7.1) (8.1) (9.1))))
+
+(setq diffs
+  '(((0.0) (9.1) (8.1) (7.1) (6.1) (5.1) (4.1) (3.1) (2.1) (1.1) (0.1))
+    ((1.0) (0.0) (9.1) (8.1) (7.1) (6.1) (5.1) (4.1) (3.1) (2.1) (1.1))
+    ((2.0) (1.0) (0.0) (9.1) (8.1) (7.1) (6.1) (5.1) (4.1) (3.1) (2.1))
+    ((3.0) (2.0) (1.0) (0.0) (9.1) (8.1) (7.1) (6.1) (5.1) (4.1) (3.1))
+    ((4.0) (3.0) (2.0) (1.0) (0.0) (9.1) (8.1) (7.1) (6.1) (5.1) (4.1))
+    ((5.0) (4.0) (3.0) (2.0) (1.0) (0.0) (9.1) (8.1) (7.1) (6.1) (5.1))
+    ((6.0) (5.0) (4.0) (3.0) (2.0) (1.0) (0.0) (9.1) (8.1) (7.1) (6.1))
+    ((7.0) (6.0) (5.0) (4.0) (3.0) (2.0) (1.0) (0.0) (9.1) (8.1) (7.1))
+    ((8.0) (7.0) (6.0) (5.0) (4.0) (3.0) (2.0) (1.0) (0.0) (9.1) (8.1))
+    ((9.0) (8.0) (7.0) (6.0) (5.0) (4.0) (3.0) (2.0) (1.0) (0.0) (9.1))))
+
+(setq dth
+  (lambda (d lst)
+    (if (dzerop d)
+        (car lst)
+        (dth (dpred d) (cdr lst)))))
+
+(setq dplus
+  (lambda (a b c)
+    (let ((row (dth (value b) sums)))
+      (if (eq c '1)
+          (dth (value a) (cdr row))
+          (dth (value a) row)))))
+
+(setq dminus
+  (lambda (a b c)
+    (let ((row (dth (value a) diffs)))
+      (if (eq c '1)
+          (dth (value b) (cdr row))
+          (dth (value b) row)))))
+
+(setq plus
+  (lambda (a b)
+    (labels
+      ((add
+         (lambda (a b c r)
+           (cond ((null a)
+                   (if (null b)
+                       (if (eq c '0)
+                           r  ; no carry
+                           (cons '1 r))
+                       (let ((sum (dplus '0 (car b) c)))
+                         (add nil
+                              (cdr b)
+                              (cdr sum)
+                              (cons (car sum) r)))))
+                 ((null b)
+                   (let ((sum (dplus (car a) '0 c)))
+                     (add (cdr a)
+                          nil
+                          (cdr sum)
+                          (cons (car sum) r))))
+                 (else (let ((sum (dplus (car a) (car b) c)))
+                         (add (cdr a)
+                              (cdr b)
+                              (cdr sum)
+                              (cons (car sum) r))))))))
+      (add (rever a) (rever b) '0 nil))))
+
+(setq normalize
+  (lambda (x)
+    (cond ((null (cdr x)) x)
+          ((eq (car x) '0)
+            (normalize (cdr x)))
+          (else x))))
+
+(setq diff
+  (lambda (a b)
+    (labels
+      ((diff
+         (lambda (a b c r)
+           (cond ((null a)
+                   (if (null b)
+                       (if (eq c '0)
+                           r
+                           'negative)
+                       'negative))
+                 ((null b)
+                   (if (eq c '0)
+                       (conc (rever a) r)
+                       (diff a #1 '0 r)))
+                 (else (let ((d (dminus (car a) (car b) c)))
+                         (diff (cdr a)
+                               (cdr b)
+                               (cdr d)
+                               (cons (car d) r))))))))
+      (let ((d (diff (rever a) (rever b) '0 nil)))
+        (if (atom d)
+            d
+            (normalize d))))))
+
+(setq less
+  (lambda (a b)
+    (eq 'negative (diff a b))))
+
+(setq grtr (lambda (a b) (less b a)))
+
+(setq lteq (lambda (a b) (not (less b a))))
+
+(setq gteq (lambda (a b) (not (less a b))))
+
+; equal = equal
+
+(setq zerop
+  (lambda (x)
+    (and (eq (car x) '0)
+         (null (cdr x)))))
+ 
+(setq times
+  (lambda (a b)
+    (labels
+      ((x10
+         (lambda (x)
+           (conc x #0)))
+       (dtimes
+         (lambda (a b r)
+           (if (dzerop b)
+               r
+               (dtimes a (dpred b) (plus a r)))))
+       (times
+         (lambda (a b r)
+           (if (null b)
+               r
+               (times (x10 a)
+                      (cdr b)
+                      (dtimes a (value (car b)) r))))))
+      (if (zerop a)
+          #0
+          (times a (rever b) #0)))))
+
+(setq divide
+  (lambda (a b)
+    (labels
+      ; Equalize the divisor B by shifting it to the left
+      ; (multiplying it by 10) until it has the same number
+      ; of digits as the dividend A.
+      ; Return: (new divisor . base 1 shift count)
+      ((eql
+         (lambda (a b r s)
+           (cond ((null a)
+                   (cons (rever r) s))
+                 ((null b)
+                   (eql (cdr a)
+                        nil
+                        (cons '0 r)
+                        (dsucc s)))
+                 (else
+                   (eql (cdr a)
+                        (cdr b)
+                        (cons (car b) r)
+                        s)))))
+       ; Divide with quotient < 10
+       ; Return (A/B*B . A/B)
+       (div10
+         (lambda (a b r)
+           (cond ((less (car r) a)
+                   (div10 a b (cons (plus (car r) b)
+                                    (plus (cdr r) #1))))
+                 ((equal (car r) a) r)
+                 (else (cons (diff (car r) b)
+                             (diff (cdr r) #1))))))
+       ; X / 10
+       (d10
+         (lambda (x)
+           (nrever (cdr (rever x)))))
+       (div
+         (lambda (a b r)
+           (if (null (cdr b))
+               (cons (normalize r) a)
+               (let ((quot (div10 a (car b) (cons #0 #0))))
+                   (div (diff a (car quot))
+                        (cons (d10 (car b)) (dpred (cdr b)))
+                        (conc r (cdr quot))))))))
+      (cond ((zerop b) (error 'divide/ by/ zero))
+            ((less a b) (cons #0 a))
+            (else (div a (eql a b nil #1) #0))))))
+
+(setq div (lambda (a b) (car (divide a b))))
+
+(setq rem (lambda (a b) (cdr (divide a b))))

@@ -1,0 +1,9 @@
+; Nested/sequential LET (LET*).
+
+(setq letn
+  (macro
+    (lambda (bs x . xs)
+      (if (null bs)
+          @(let () ,x . ,xs)
+          @(let (,(car bs))
+             (letn ,(cdr bs) ,x . ,xs))))))

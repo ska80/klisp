@@ -1,0 +1,129 @@
+; Animal guessing game
+; To save the database, write
+; it to an image file, e.g
+; (suspend 'animals)
+
+(setq db
+  '((does it live in the water)   
+    ((is it a mammal)
+     (dolphin)
+     ((is it a beast of prey)
+      (octopus)
+      (starfish)))
+    ((can it fly)
+     ((is it an insect)
+      ((does it have a stinger)
+       (bee) 
+       (butterfly))
+      ((does it live in a swarm) 
+       (crow)
+       (dove))) 
+     ((is it a pet animal)
+      ((does it chase balls of wool)
+       (cat)
+       ((does it bark)
+        (dog)
+        (goldfish))) 
+      (cow)))))
+
+(setq terpri
+  (lambda ()
+    (print '/ )))
+
+(setq readln
+  (lambda ()
+    (loop n ((a nil)
+             (w (read)))
+      (if (eq w 'q)
+          (nrever a)
+          (n (cons w a) (read))))))
+
+(setq prins
+  (lambda (s)
+    (cond ((null s))
+          ((null (cdr s))
+            (prin1 (car s)))
+          (else
+            (prin (car s))
+            (prins (cdr s))))))
+
+(setq prints
+  (lambda (s)
+    (prins s)
+    (terpri)))
+
+(setq yesno
+  (lambda ()
+    (let ((a (memb (read) '(y yes))))
+      (terpri)
+      a)))
+
+(setq giveup
+  (lambda (db)
+    (prints '(ok i give up/! what is it/? /(only one word/!/)))
+    (let ((b (read)))
+      (terpri)
+      (prins '(enter a question that distinguishes a/ ))
+      (prin b)
+      (prins '(from a/ ))
+      (print (car db))
+      (prints '(end input with a Q on a blank line))
+      (let ((q (readln)))
+        (terpri)
+        (prins '(what is the answer for a/ ))
+        (prin1 b)
+        (print '/?)
+        (if (yesno)
+            (setcdr db (list (list b) (list (car db))))
+            (setcdr db (list (list (car db)) (list b))))
+        (setcar db q)))))
+
+(setq gotit
+  (lambda (db)
+    (prins '(is it a/ ))
+    (prin1 (car db))
+    (print '/?)
+    (if (yesno)
+        (print 'cool/!)
+        (giveup db))))
+
+(setq choose
+  (lambda (db)
+    (prins (car db))
+    (print '/?)
+    (if (yesno)
+        (cadr db)
+        (caddr db))))
+
+(setq try
+  (lambda (db)
+    (if (atom (car db))
+        (gotit db)
+        (try (choose db)))))
+
+(setq guess
+  (lambda ()
+    (prints '(enter only letters and blanks/!))
+    (terpri)
+    (loop new ()
+      (prints '(think of an animal/!))
+      (try db)
+      (prints '(one more time/?))
+      (cond ((yesno)
+              (new))
+            (else
+              (prints '(do not forget to save the database/!))
+              (print 'goodbye/!)
+              t)))))
+
+(setq animals
+  (lambda (db)
+    (prin1 '/(/ )
+    (loop next ((db db))
+      (cond ((atom (car db))
+              (prin (car db)))
+            (else
+              (next (cadr db))
+              (next (caddr db)))))
+   (print '/))
+   t))

@@ -1,0 +1,15 @@
+; Integer square root.
+
+(load 'src//nmath)
+
+(setq sqrt
+  (lambda (square)
+    (loop sqr ((x #1) (last #0))
+      (cond ((equal last x) x)
+            ((equal last (plus x #1))
+              (cond ((grtr (times x x) square) (minus x #1))
+                    (else x)))
+            (else
+              (sqr (div (plus x (div square x))
+                        #2)
+                   x))))))

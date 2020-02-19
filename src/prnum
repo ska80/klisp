@@ -1,0 +1,12 @@
+; Print an integer in condensed form,
+; e.g. (prnum '(1 2 3)) will print #123.
+; For use with NMATH package.
+
+(setq prnum
+  (lambda (x)
+    (prin1 '/#)
+    (loop p ((x x))
+      (cond ((null x))
+            (else
+              (prin1 (car x))
+              (p (cdr x)))))))

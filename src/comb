@@ -1,0 +1,25 @@
+; (comb n a)    =  N-combinations of set A
+; (comb n a t)  =  with repetition
+
+(setq comb
+  (lambda (n a . r)
+    (labels
+      ((tails
+         (lambda (a)
+           (if (null a)
+               nil
+               (cons a (tails (cdr a))))))
+       (comb
+         (lambda (n a)
+           (cond
+             ((null n) nil)
+             ((null (cdr n)) (map list a))
+             (else
+               (apply conc
+                      (map (lambda (tl)
+                             (map (lambda (u)
+                                    (cons (car tl) u))
+                                  (comb (cdr n)
+                                        (if r tl (cdr tl)))))
+                           (tails a))))))))
+      (comb n a))))
